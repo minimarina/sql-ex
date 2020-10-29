@@ -5,3 +5,9 @@ SELECT model,
        hd
 FROM PC
 WHERE price < 500;
+
+/*2. Найдите производителей принтеров. Вывести: maker*/
+
+SELECT DISTINCT maker
+FROM Product
+WHERE type = 'Printer';
