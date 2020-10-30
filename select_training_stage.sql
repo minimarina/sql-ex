@@ -397,7 +397,7 @@ AS (
 	FROM income
 
 	UNION ALL
-	
+
 	SELECT code,
 		point,
 		DATE,
