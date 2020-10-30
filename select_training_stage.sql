@@ -289,30 +289,30 @@ WHERE Product.maker IN (
 GROUP BY Product.maker;
 
 /*28. Используя таблицу Product, определить количество производителей, выпускающих по одной модели.*/
-WITH quantity AS (
-		SELECT COUNT(maker) AS q
-		FROM Product
-		GROUP BY maker
-		HAVING COUNT(maker) = 1
-		)
-
+WITH quantity
+AS (
+	SELECT COUNT(maker) AS q
+	FROM Product
+	GROUP BY maker
+	HAVING COUNT(maker) = 1
+	)
 SELECT COUNT(q)
 FROM quantity;
 
-	/*29. В предположении, что приход и расход денег на каждом пункте приема фиксируется не чаще одного раза в день [т.е. первичный ключ (пункт, дата)], написать запрос с выходными данными (пункт, дата, приход, расход).
+/*29. В предположении, что приход и расход денег на каждом пункте приема фиксируется не чаще одного раза в день [т.е. первичный ключ (пункт, дата)], написать запрос с выходными данными (пункт, дата, приход, расход).
 Использовать таблицы Income_o и Outcome_o.*/
-	WITH k AS (
-		SELECT Income_o.point,
-			Income_o.DATE
-		FROM Income_o
+WITH k
+AS (
+	SELECT Income_o.point,
+		Income_o.DATE
+	FROM Income_o
 
-		UNION
+	UNION
 
-		SELECT Outcome_o.point,
-			Outcome_o.DATE
-		FROM Outcome_o
-		)
-
+	SELECT Outcome_o.point,
+		Outcome_o.DATE
+	FROM Outcome_o
+	)
 SELECT k.point,
 	k.DATE,
 	inc,
@@ -325,33 +325,39 @@ FULL JOIN Outcome_o ON k.point = Outcome_o.point
 
 /*30. В предположении, что приход и расход денег на каждом пункте приема фиксируется произвольное число раз (первичным ключом в таблицах является столбец code), требуется получить таблицу, в которой каждому пункту за каждую дату выполнения операций будет соответствовать одна строка.
 Вывод: point, date, суммарный расход пункта за день (out), суммарный приход пункта за день (inc). Отсутствующие значения считать неопределенными (NULL).*/
-WITH i AS (
-		SELECT point,
-			date,
-			NULL AS out,
-			SUM(inc) AS inc
-		FROM Income
-		GROUP BY point, date
-		),
-	o AS (
-		SELECT point,
-			date,
-			SUM(out) AS out,
-			NULL AS inc
-		FROM Outcome
-		GROUP BY point,
-			date
-		),
-	adds_p_and_d AS (
-		SELECT point, date
-		FROM i
+/*30.1 Первоначальный вариант решения, жутко ресурсозатратный*/
+WITH i
+AS (
+	SELECT point,
+		DATE,
+		NULL AS OUT,
+		SUM(inc) AS inc
+	FROM Income
+	GROUP BY point,
+		DATE
+	),
+o
+AS (
+	SELECT point,
+		DATE,
+		SUM(OUT) AS OUT,
+		NULL AS inc
+	FROM Outcome
+	GROUP BY point,
+		DATE
+	),
+adds_p_and_d
+AS (
+	SELECT point,
+		DATE
+	FROM i
 
-		EXCEPT
+	EXCEPT
 
-		SELECT point, date
-		FROM o
-		)
-
+	SELECT point,
+		DATE
+	FROM o
+	)
 SELECT i.point,
 	i.DATE,
 	i.OUT,
@@ -379,3 +385,30 @@ SELECT o.point,
 FROM o
 LEFT JOIN i ON o.point = i.point
 	AND o.DATE = i.DATE;
+
+/*30.2 Оптимизированный вариант решения после разбора решений других участников*/
+WITH data
+AS (
+	SELECT code,
+		point,
+		DATE,
+		inc,
+		NULL AS OUT
+	FROM income
+
+	UNION ALL
+	
+	SELECT code,
+		point,
+		DATE,
+		NULL AS inc,
+		OUT
+	FROM outcome
+	)
+SELECT point,
+	DATE,
+	sum(OUT) AS OUT,
+	sum(inc) AS inc
+FROM data
+GROUP BY point,
+	DATE
