@@ -411,4 +411,53 @@ SELECT point,
 	sum(inc) AS inc
 FROM data
 GROUP BY point,
-	DATE
+	DATE;
+
+/*31. Для классов кораблей, калибр орудий которых не менее 16 дюймов, укажите класс и страну.*/
+SELECT class,
+	country
+FROM Classes
+WHERE bore >= 16;
+
+/*32. Одной из характеристик корабля является половина куба калибра его главных орудий (mw).
+С точностью до 2 десятичных знаков определите среднее значение mw для кораблей каждой страны, у которой есть корабли в базе данных.*/
+WITH all_ships AS (
+		SELECT Classes.country,
+			Classes.class,
+			Ships.name,
+			Classes.bore
+		FROM Ships
+		JOIN Classes ON Ships.Class = Classes.class
+
+		UNION
+
+		SELECT Classes.country,
+			Classes.class,
+			Outcomes.ship,
+			Classes.bore
+		FROM Outcomes
+		JOIN Classes ON Outcomes.ship = Classes.class
+		)
+
+SELECT country,
+	CAST(AVG(POWER(bore, 3) / 2) AS NUMERIC(6, 2))
+FROM all_ships
+GROUP BY country;
+
+/*33. Укажите корабли, потопленные в сражениях в Северной Атлантике (North Atlantic).
+Вывод: ship.*/
+SELECT ship
+FROM Outcomes
+WHERE battle = 'North Atlantic'
+	AND result = 'sunk';
+
+/*34. По Вашингтонскому международному договору от начала 1922 г. запрещалось строить линейные корабли водоизмещением более 35 тыс.тонн.
+Укажите корабли, нарушившие этот договор (учитывать только корабли c известным годом спуска на воду).
+Вывести названия кораблей.*/
+SELECT Ships.name
+FROM Ships,
+	Classes
+WHERE Ships.class = Classes.class
+	AND Classes.type = 'bb'
+	AND Ships.launched >= 1922
+	AND Classes.displacement > 35000;
